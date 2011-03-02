@@ -90,6 +90,13 @@ class NetzkeController < ApplicationController
     render :text => result, :layout => false, :status => error ? 500 : 200
   end
 
+  def export  
+    result=invoke_endpoint params[:act], params[:method].underscore, params[:data], nil
+    export = ActiveSupport::JSON.decode(result)
+    response.headers["Content-Type"] = "application/vnd.ms-excel"
+    send_data generate_export(export), :filename => "#{export["name"].underscore}.xls"
+  end
+
   # Action used by non-Ext.Direct (Touch) components
   def dispatcher
     endpoint_dispatch(params[:address])
@@ -114,8 +121,11 @@ class NetzkeController < ApplicationController
       #  => tid, action, method as in the request, so that the client can mark the transaction and won't retry it
       #  => result: JavaScript code from he endpoint result which gets applied to the client-side component instance
       result = root_component.send(endpoint_action, data)
-
-      {:type => "rpc", :tid => tid, :action => component_name, :method => action, :result => result.present? && result.l || {}}.to_json
+      if action == "export_data"
+        result.present? && result.l || {}
+      else
+        {:type => "rpc", :tid => tid, :action => component_name, :method => action, :result => result.present? && result.l || {}}.to_json
+      end
     end
 
     # Main dispatcher of old-style (Sencha Touch) HTTP requests. The URL contains the name of the component,
@@ -150,5 +160,19 @@ class NetzkeController < ApplicationController
 
       res.join("\n")
     end
-
+    
+    def generate_export(export)
+      book = Spreadsheet::Workbook.new
+      sheet = book.create_worksheet
+      sheet.row(0).concat export["headers"]
+      line = 1
+      export["data"].each do |row|
+        sheet.row(line).concat row
+        line +=1
+      end
+      sheet.name = export["name"]
+      output = StringIO.new('')
+      book.write(output)
+      output.string
+    end
 end
