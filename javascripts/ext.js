@@ -15,7 +15,7 @@ Ext.state.Provider.prototype.set = function(){};
   }
 })();
 
-Netzke.classes.NetzkeRemotingProvider=Ext.extend(Ext.direct.RemotingProvider,{
+Netzke.classes.NetzkeRemotingProvider = Ext.extend(Ext.direct.RemotingProvider, {
   getCallData: function(t){
     return {
       act: t.action, // rails doesn't really support having a parameter named "action"
@@ -115,9 +115,6 @@ Ext.apply(Netzke.classes.Core.Mixin, {
       }
     }
 
-    // From everywhere accessible FeedbackGhost
-    this.feedbackGhost = new Netzke.FeedbackGhost();
-
     // Call the original initComponent
     this.initComponentWithoutNetzke();
   },
@@ -133,7 +130,6 @@ Ext.apply(Netzke.classes.Core.Mixin, {
 
     Ext.each(endpoints, function(intp){
       directActions.push({"name":intp.camelize(true), "len":1});
-      //this[intp.camelize(true)] = function(args, callback, scope){ this.callServer(intp, args, callback, scope); }
       this[intp.camelize(true)] = function(arg, callback, scope) {
         Netzke.runningRequests++;
         scope=scope || that;
